@@ -1,4 +1,4 @@
-# Jahia JCustomer Docker image
+# Jahia jCustomer Docker image
 
 ## Build image
 Build arg :
@@ -13,7 +13,7 @@ Env vars:
 ### Examples
 #### basic run
 ```bash
-docker run -d --env-file /path/to/my-env-file jahia/unomi:1.4.1
+docker run -d --env-file /path/to/my-env-file jahia/jcustomer:1.4.1
 ```
 
 #### Basic env file example
@@ -23,7 +23,7 @@ unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME=unomi-es-cluster-name
 ```
 
 #### Example to configure a 3 unomi nodes cluster with an elasticsearch 5.6 docker image
-##### create docker network
+##### Create docker network
 ``` bash
 docker network create  -d bridge unomi-network
 ```
@@ -42,7 +42,7 @@ unomi_env_var_UNOMI_ROOT_PASSWORD=AnAwesomePassword
 unomi_env_var_UNOMI_HAZELCAST_TCPIP_MEMBERS=unomi1,unomi2,unomi3
 MAXMIND_KEY=XXXXXXXXXXXXXXXXX
 ```
-##### create unomi nodes
+##### Create unomi nodes
 ``` bash
 docker run -d --name=unomi1 --hostname=unomi1 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.4.1
 docker run -d --name=unomi2 --hostname=unomi2 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.4.1
