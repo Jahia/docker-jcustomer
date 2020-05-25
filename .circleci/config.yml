@@ -1,0 +1,58 @@
+---
+version: 2.1
+
+orbs:
+  docker: circleci/docker@1.0.1
+
+commands:
+  build_jcustomer:
+    description: "Build Jahia's images for jahiastic-jahia"
+    parameters:
+      jver:
+        type: string
+      base_url:
+        type: string
+      tag_suffix:
+        type: string
+        default: "<< pipeline.git_branch >>"
+      latest:
+        type: boolean
+        default: False
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check
+      - docker/build:
+          step-name: "Build jahia/jcustomer:<< parameters.jver >><< parameters.tag_suffix >>"
+          tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+          image: "jahia/jcustomer"
+          dockerfile: Dockerfile
+          extra_build_args:
+            '
+            --build-arg RELEASE_URL="<< parameters.base_url >>"
+            --no-cache
+            '
+      - docker/push:
+          step-name: "Push jahia/jcustomer:<< parameters.jver >><< parameters.tag_suffix >>"
+          image: "jahia/jcustomer"
+          tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+
+jobs:
+  v1_5_1:
+    executor: docker/docker
+    steps:
+      - build_jcustomer:
+          jver: "1.5.1"
+          tag_suffix: ""
+          latest: True
+          base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.1.tar.gz"
+
+workflows:
+  version: 2
+  build_all_jcustomer:
+    jobs:
+      - v1_5_1:
+          context: cloud-qa
+          filters:
+            branches:
+              only: master
