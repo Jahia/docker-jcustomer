@@ -159,13 +159,13 @@ jc_env: &jc_env
 
 
 jobs:
-  b151:
+  build_151:
     executor: docker/docker
     steps:
       - build_jcustomer:
           jver: "1.5.1"
           base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.1.tar.gz"
-  t151:
+  test_151:
     docker:
       - image: jahia/build2test:1.5.1
         <<: *jc_env
@@ -173,7 +173,7 @@ jobs:
     steps:
       - test_jcustomer:
           jver: "1.5.1"
-  p151:
+  publish_151:
     executor: docker/docker
     steps:
       - publish_image:
@@ -185,13 +185,13 @@ workflows:
   version: 2
   build_all_jcustomer:
     jobs:
-      - b151:
+      - build_151:
           <<: *job_options
-      - t151:
-          <<: *job_options
-          requires:
-            - b151
-      - p151:
+      - test_151:
           <<: *job_options
           requires:
-            - t151
+            - build_151
+      - publish_151:
+          <<: *job_options
+          requires:
+            - test_151
