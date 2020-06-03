@@ -3,11 +3,15 @@ version: 2.1
 
 orbs:
   docker: circleci/docker@1.0.1
+  slack: circleci/slack@3.4.2
 
 commands:
   build_jcustomer:
     description: "Build Jahia's images for jahiastic-jahia"
     parameters:
+      repo:
+        type: string
+        default: jahia/build2test
       jver:
         type: string
       base_url:
@@ -15,17 +19,14 @@ commands:
       tag_suffix:
         type: string
         default: "<< pipeline.git_branch >>"
-      latest:
-        type: boolean
-        default: False
     steps:
       - setup_remote_docker
       - checkout
       - docker/check
       - docker/build:
-          step-name: "Build jahia/jcustomer:<< parameters.jver >><< parameters.tag_suffix >>"
+          step-name: "Build << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
           tag: "<< parameters.jver >><< parameters.tag_suffix >>"
-          image: "jahia/jcustomer"
+          image: "<< parameters.repo >>"
           dockerfile: Dockerfile
           extra_build_args:
             '
@@ -33,26 +34,164 @@ commands:
             --no-cache
             '
       - docker/push:
-          step-name: "Push jahia/jcustomer:<< parameters.jver >><< parameters.tag_suffix >>"
-          image: "jahia/jcustomer"
+          step-name: "Push to test repo << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
+          image: "<< parameters.repo >>"
           tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+      - slack/status:
+          failure_message: |
+            ':alert: Building jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
+          success_message: |
+            ':building_construction: Building jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
+
+  test_jcustomer:
+    description: "Testing jcustomer image"
+    parameters:
+      jver:
+        type: string
+      tag_suffix:
+        type: string
+        default: "<< pipeline.git_branch >>"
+    steps:
+      - run:
+          name: start jcustomer entrypoint
+          background: true
+          command: |
+            set +eo pipefail
+            env
+            free -m
+            /entrypoint.sh
+      - run:
+          name: healtcheck test and push
+          command: |
+            set +eo pipefail
+            for i in {1..666}; do
+              echo "iteration $i/666..."
+              curl "http://localhost:8181/context.json?sessionId=abricot" -s | python -m json.tool
+              if [ $? -eq 0 ]; then
+              echo "Jcustomer send a json, that's ok"
+                exit 0
+              fi
+              echo "Not ready yet"
+              echo
+              sleep 1
+            done
+            echo "you are a failure"
+            exit 1
+      - slack/status:
+          failure_message: |
+            ':alert: Testing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
+          success_message: |
+            ':heartpulse: Testing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
+
+  publish_image:
+    description: "Push tested image to public repo"
+    parameters:
+      repo:
+        type: string
+        default: jcustomer
+      repo_source:
+        type: string
+        default: jahia/build2test
+      jver:
+        type: string
+      tag_suffix:
+        type: string
+        default: "<< pipeline.git_branch >>"
+      latest:
+        type: boolean
+        default: false
+    steps:
+      - setup_remote_docker
+      - checkout
+      - docker/check
+      - docker/pull:
+          images: "<< parameters.repo_source >>:<< parameters.jver >><< parameters.tag_suffix >>"
+      - run:
+          name: "set final name to image"
+          command: |
+            docker tag \
+              << parameters.repo_source >>:<< parameters.jver >><< parameters.tag_suffix >> \
+              << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>
+      - docker/push:
+          step-name: "Push to final repo << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
+          image: "<< parameters.repo >>"
+          tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+      - when:
+          condition: << parameters.latest >>
+          steps:
+            - run:
+                name: "set latest tag to image"
+                command: |
+                  docker tag \
+                    << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >> \
+                    << parameters.repo >>:latest
+            - docker/push:
+                step-name: "Pushing << parameters.repo >>:latest"
+                image: "<< parameters.repo >>"
+                tag: "latest"
+      - slack/status:
+          failure_message: |
+            ':alert: Publishing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
+          success_message: |
+            ':whale2: Publishing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
+
+
+######### commun stuff
+job_options: &job_options
+  context: cloud-qa
+  filters:
+    branches:
+      only: master
+es_env: &es_env
+  environment:
+    discovery.type: single-node
+    xpack.security.enabled: "false"
+es_container: &es_container
+  - image: elasticsearch:7.6.1
+    <<: *es_env
+jc_env: &jc_env
+  environment:
+    unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES: localhost:9200
+    unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME: elasticsearch-cluster
+    unomi_env_var_UNOMI_CLUSTER_INTERNAL_ADDRESS: https://localhost:9443
+    unomi_env_var_UNOMI_CLUSTER_PUBLIC_ADDRESS: http://localhost:8181
+    unomi_env_var_KARAF_OPTS: "-Dunomi.autoStart=true"
+
 
 jobs:
-  v1_5_1:
+  build_151:
     executor: docker/docker
     steps:
       - build_jcustomer:
           jver: "1.5.1"
-          tag_suffix: ""
-          latest: True
           base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.1.tar.gz"
+  test_151:
+    docker:
+      - image: jahia/build2test:1.5.1
+        <<: *jc_env
+      - <<: *es_container
+    steps:
+      - test_jcustomer:
+          jver: "1.5.1"
+  publish_151:
+    executor: docker/docker
+    steps:
+      - publish_image:
+          jver: "1.5.1"
+          latest: true
+
 
 workflows:
   version: 2
   build_all_jcustomer:
     jobs:
-      - v1_5_1:
-          context: cloud-qa
-          filters:
-            branches:
-              only: master
+      - build_151:
+          <<: *job_options
+      - test_151:
+          <<: *job_options
+          requires:
+            - build_151
+      - publish_151:
+          <<: *job_options
+          requires:
+            - test_151
