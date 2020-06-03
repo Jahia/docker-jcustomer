@@ -88,7 +88,7 @@ commands:
     parameters:
       repo:
         type: string
-        default: jcustomer
+        default: jahia/jcustomer
       repo_source:
         type: string
         default: jahia/build2test
