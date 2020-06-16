@@ -18,14 +18,13 @@ commands:
         type: string
       tag_suffix:
         type: string
-        default: "<< pipeline.git_branch >>"
     steps:
       - setup_remote_docker
       - checkout
       - docker/check
       - docker/build:
           step-name: "Build << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
-          tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+          tag: "<< parameters.jver >>"
           image: "<< parameters.repo >>"
           dockerfile: Dockerfile
           extra_build_args:
@@ -34,9 +33,9 @@ commands:
             --no-cache
             '
       - docker/push:
-          step-name: "Push to test repo << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
+          step-name: "Push to test repo << parameters.repo >>:<< parameters.jver >>"
           image: "<< parameters.repo >>"
-          tag: "<< parameters.jver >><< parameters.tag_suffix >>"
+          tag: "<< parameters.jver >>"
       - slack/status:
           failure_message: |
             ':alert: Building jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
@@ -50,7 +49,6 @@ commands:
         type: string
       tag_suffix:
         type: string
-        default: "<< pipeline.git_branch >>"
     steps:
       - run:
           name: start jcustomer entrypoint
@@ -96,7 +94,6 @@ commands:
         type: string
       tag_suffix:
         type: string
-        default: "<< pipeline.git_branch >>"
       latest:
         type: boolean
         default: false
@@ -105,19 +102,22 @@ commands:
       - checkout
       - docker/check
       - docker/pull:
-          images: "<< parameters.repo_source >>:<< parameters.jver >><< parameters.tag_suffix >>"
+          images: "<< parameters.repo_source >>:<< parameters.jver >>"
       - run:
           name: "set final name to image"
           command: |
             docker tag \
-              << parameters.repo_source >>:<< parameters.jver >><< parameters.tag_suffix >> \
+              << parameters.repo_source >>:<< parameters.jver >> \
               << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>
       - docker/push:
           step-name: "Push to final repo << parameters.repo >>:<< parameters.jver >><< parameters.tag_suffix >>"
           image: "<< parameters.repo >>"
           tag: "<< parameters.jver >><< parameters.tag_suffix >>"
       - when:
-          condition: << parameters.latest >>
+          condition:
+            and:
+              -  << parameters.latest >>
+              - equal: [ "<< parameters.tag_suffix >>", "" ]
           steps:
             - run:
                 name: "set latest tag to image"
@@ -137,6 +137,17 @@ commands:
 
 
 ######### commun stuff
+tag_suffix: &tag_suffix
+  #############################
+  #  /!\ /!\ /!\ /!\ /!\ /!\  #
+  #   Set something here if   #
+  # you do not want to update #
+  #      official images.     #
+  #  /!\ /!\ /!\ /!\ /!\ /!\  #
+  #############################
+  # use value "" in order to build official images
+  # tag_suffix: "_<< pipeline.git.branch >>"
+  tag_suffix: ""
 job_options: &job_options
   context: cloud-qa
   filters:
@@ -165,6 +176,7 @@ jobs:
       - build_jcustomer:
           jver: "1.5.1"
           base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.1.tar.gz"
+          <<: *tag_suffix
   test_151:
     docker:
       - image: jahia/build2test:1.5.1
@@ -173,12 +185,14 @@ jobs:
     steps:
       - test_jcustomer:
           jver: "1.5.1"
+          <<: *tag_suffix
   publish_151:
     executor: docker/docker
     steps:
       - publish_image:
           jver: "1.5.1"
           latest: true
+          <<: *tag_suffix
 
 
 workflows:
