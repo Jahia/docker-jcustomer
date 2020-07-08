@@ -29,7 +29,7 @@ RUN cd /opt \
 COPY entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 80 8181 9443
+EXPOSE 8181 9443
 
 WORKDIR $JCUSTOMER_HOME
 
