@@ -10,6 +10,10 @@ Env vars:
 * `MAXMIND_KEY` : The MAXMIND API key to fetch GeoLite DB (see https://dev.maxmind.com/geoip/geoip2/geolite2/). If not provided, the db won't be fetch.
 * `unomi_env_var_*` : All unomi parameters that can be configured with env var can be defined with this prefix. If you want to specify multiple variables, an env file is strongly recomended instead of providing all of them one by one with -e docker option. The env var unomi_env_var_MY_UNOMI_PARAMATER will be converted to MY_UNOMI_PARAMATER and added to unomi process env vars. As the image doesn't embed any elasticsearch, the only required parameters are unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES and unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME
 
+### Ports binding
+- 8181 for http
+- 9443 for https
+
 ### Build
 
 The jCustomer archive can come from two locations:
