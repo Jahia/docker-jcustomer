@@ -35,7 +35,7 @@ unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME=unomi-es-cluster-name
 #### Example to configure a 3 unomi nodes cluster with an elasticsearch 5.6 docker image
 ##### Create docker network
 ``` bash
-docker network create  -d bridge unomi-network
+docker network create  -d bridge unomi-net
 ```
 ##### Create elasticsearch container
 ``` bash
