@@ -11,7 +11,7 @@ commands:
     parameters:
       repo:
         type: string
-        default: jahia/build2test
+        default: jahia/jcustomer_test
       jver:
         type: string
       base_url:
@@ -89,7 +89,7 @@ commands:
         default: jahia/jcustomer
       repo_source:
         type: string
-        default: jahia/build2test
+        default: jahia/jcustomer_test
       jver:
         type: string
       tag_suffix:
@@ -179,7 +179,10 @@ jobs:
           <<: *tag_suffix
   test_151:
     docker:
-      - image: jahia/build2test:1.5.1
+      - image: jahia/jcustomer_test:1.5.1
+        auth:
+          username: $DOCKER_LOGIN
+          password: $DOCKER_PASSWORD
         <<: *jc_env
       - <<: *es_container
     steps:
@@ -205,7 +208,19 @@ workflows:
           <<: *job_options
           requires:
             - build_151
+
+      - human_validation:
+          type: approval
+          requires:
+            - test_151
+          <<: *job_options
+      - slack/approval-notification:
+          include_project_field: true
+          message: ":female-police-officer: CircleCI requests your approval: please confirm that images are ready to be pushed in public repository..."
+          requires:
+            - test_151
+
       - publish_151:
           <<: *job_options
           requires:
-            - test_151
+            - human_validation
