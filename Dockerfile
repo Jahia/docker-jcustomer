@@ -33,4 +33,4 @@ EXPOSE 8181 9443
 
 WORKDIR $JCUSTOMER_HOME
 
-CMD "/entrypoint.sh"
+CMD ["/entrypoint.sh"]
