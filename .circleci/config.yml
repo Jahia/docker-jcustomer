@@ -227,6 +227,7 @@ workflows:
           message: ":female-police-officer: CircleCI requests your approval: please confirm that images are ready to be pushed in public repository..."
           requires:
             - test_151
+          <<: *job_options
 
       - publish_151:
           <<: *job_options
