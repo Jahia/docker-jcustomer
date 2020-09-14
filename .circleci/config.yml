@@ -157,7 +157,9 @@ tag_suffix: &tag_suffix
   # tag_suffix: "_<< pipeline.git.branch >>"
   tag_suffix: ""
 job_options: &job_options
-  context: cloud-qa
+  context:
+    - cloud-docker-hub
+    - cloud-slack
   filters:
     branches:
       only: master
