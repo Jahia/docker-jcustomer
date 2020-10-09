@@ -12,6 +12,7 @@ version: 2.1
 orbs:
   docker: circleci/docker@1.0.1
   slack: circleci/slack@3.4.2
+  anchore: anchore/anchore-engine@1.8.1
 
 commands:
   build_jcustomer:
@@ -143,6 +144,41 @@ commands:
           success_message: |
             ':whale2: Publishing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
 
+  scan_image:
+    description: "Pull and scan a docker image"
+    parameters:
+      image_name:
+        type: string
+      registry_user:
+        type: string
+      registry_pass:
+        type: string
+      slack_channel:
+        type: string
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - checkout
+      - anchore/start_engine
+      - anchore/add_private_registry:
+          registry_name: "docker.io"
+          registry_user: "<< parameters.registry_user >>"
+          registry_pass: "<< parameters.registry_pass >>"
+      - anchore/analyze_image:
+          image_name: "<< parameters.image_name >>"
+          timeout: "600"
+      - anchore/policy_evaluation:
+          image_name: "<< parameters.image_name >>"
+          policy_failure: true
+      - slack/status:
+          channel: "<< parameters.slack_channel >>"
+          failure_message: |
+            ':alert: Scanning << parameters.image_name >> has failed'
+          success_message: |
+            ':mag: Scanned  << parameters.image_name >> successfully'
+      - anchore/parse_reports
+      - store_artifacts:
+          path: anchore-reports
 
 ######### commun stuff
 tag_suffix: &tag_suffix
@@ -156,13 +192,15 @@ tag_suffix: &tag_suffix
   # use value "" in order to build official images
   # tag_suffix: "_<< pipeline.git.branch >>"
   tag_suffix: ""
+filters: &filters
+  filters:
+    branches:
+      only: master
 job_options: &job_options
   context:
     - cloud-docker-hub
     - cloud-slack
-  filters:
-    branches:
-      only: master
+  <<: *filters
 es_env: &es_env
   environment:
     discovery.type: single-node
@@ -199,6 +237,23 @@ jobs:
       - test_jcustomer:
           jver: "1.5.1"
           <<: *tag_suffix
+
+  scan_jcustomer_image:
+    executor: anchore/anchore_engine
+    parameters:
+      image:
+        type: string
+      slack_channel:
+        type: string
+    steps:
+      - run:
+          command: apk update; apk add bash curl
+      - scan_image:
+          image_name: "<< parameters.image >>"
+          registry_user: "$DOCKER_LOGIN"
+          registry_pass: "$DOCKER_PASSWORD"
+          slack_channel: "<< parameters.slack_channel >>"
+
   publish_151:
     executor: docker/docker
     steps:
@@ -218,20 +273,40 @@ workflows:
           <<: *job_options
           requires:
             - build_151
+      - scan_jcustomer_image:
+         <<: *job_options
+         image: jahia/jcustomer_test:1.5.1
+         slack_channel: team-cloud-notif
+         requires:
+           - build_151
 
       - human_validation:
           type: approval
           requires:
             - test_151
+            - scan_jcustomer_image
           <<: *job_options
       - slack/approval-notification:
           include_project_field: true
           message: ":female-police-officer: CircleCI requests your approval: please confirm that images are ready to be pushed in public repository..."
           requires:
             - test_151
+            - scan_jcustomer_image
           <<: *job_options
 
       - publish_151:
           <<: *job_options
           requires:
             - human_validation
+
+
+  weekly_scan:
+    triggers:
+      - schedule:
+          cron: "0 1 * * 0"
+          <<: *filters
+    jobs:
+      - scan_jcustomer_image:
+          <<: *job_options
+          image: jahia/jcustomer:1.5.1
+          slack_channel: team-cloud-security
