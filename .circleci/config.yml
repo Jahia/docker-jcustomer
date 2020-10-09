@@ -273,25 +273,16 @@ workflows:
           <<: *job_options
           requires:
             - build_151
-      - scan_jcustomer_image:
-         <<: *job_options
-         image: jahia/jcustomer_test:1.5.1
-         slack_channel: team-cloud-notif
-         requires:
-           - build_151
-
       - human_validation:
           type: approval
           requires:
             - test_151
-            - scan_jcustomer_image
           <<: *job_options
       - slack/approval-notification:
           include_project_field: true
           message: ":female-police-officer: CircleCI requests your approval: please confirm that images are ready to be pushed in public repository..."
           requires:
             - test_151
-            - scan_jcustomer_image
           <<: *job_options
 
       - publish_151:
