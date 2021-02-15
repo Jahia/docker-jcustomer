@@ -20,4 +20,12 @@ if [ ! -z "$MAXMIND_KEY" ]; then
     rm -rf GeoLite2-City*
 fi
 
+health_check="$(curl -fsSL "$UNOMI_ELASTICSEARCH_ADDRESSES/_cat/health?h=status")"
+
+until ([ "$health_check" = 'yellow' ] || [ "$health_check" = 'green' ]); do
+    health_check="$(curl -fsSL "$UNOMI_ELASTICSEARCH_ADDRESSES/_cat/health?h=status")"
+    >&2 echo "Elastic Search is not yet available - waiting (health check=$health_check)..."
+    sleep 1
+done
+
 exec $JCUSTOMER_HOME/bin/karaf daemon
