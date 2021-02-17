@@ -20,22 +20,28 @@ if [ ! -z "$MAXMIND_KEY" ]; then
     rm -rf GeoLite2-City*
 fi
 
-
 if [[ $unomi_env_var_UNOMI_ELASTICSEARCH_SSL_ENABLE == 'true' ]]; then
-	protocol = 'https://'
+    protocol="https"
 else
-	protocol = 'http://'
+    protocol="http"
 fi
-
 if [[ $unomi_env_var_UNOMI_ELASTICSEARCH_SSL_TRUST_ALL_CERTIFICATES == 'true' ]]; then
-	optiontrust =  '-k'
+    optiontrust='-k'
 fi
+check_cmd="curl -m 5 -fsSL $optiontrust ${protocol}://${unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES}/_cat/health?h=status"
+check_es(){
+    status=$($check_cmd)
+    case "$status" in
+        yellow|green) return 0;; 
+        *) return 1;;
+    esac
+}
 
-health_check="$(curl -fsSL $optiontrust "$protocol$unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES/_cat/health?h=status")"
+attempt=0
+max_attempts=120
 
-until ([ "$health_check" = 'yellow' ] || [ "$health_check" = 'green' ]); do
-    health_check="$(curl -fsSL $optiontrust "$protocol$unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES/_cat/health?h=status")"
-    echo "Elastic Search is not yet available - waiting (health check=$health_check)..."
+until check_es || [[ $attempt -eq $max_attempts ]]; do
+    echo "Elastic Search is not yet available - Attempt $(( ++ attempt )) / $max_attempts - Status : $status - waiting..."
     sleep 1
 done
 
