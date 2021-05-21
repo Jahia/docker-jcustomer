@@ -28,7 +28,10 @@ fi
 if [[ $unomi_env_var_UNOMI_ELASTICSEARCH_SSL_TRUST_ALL_CERTIFICATES == 'true' ]]; then
     optiontrust='-k'
 fi
-check_cmd="curl -m 5 -fsSL $optiontrust ${protocol}://${unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES}/_cat/health?h=status"
+if [[ "$unomi_env_var_UNOMI_ELASTICSEARCH_USERNAME" != '' ]]; then
+    credentials="-u $unomi_env_var_UNOMI_ELASTICSEARCH_USERNAME:$unomi_env_var_UNOMI_ELASTICSEARCH_PASSWORD"
+fi
+check_cmd="curl -m 5 -fsSL $optiontrust $credentials ${protocol}://${unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES}/_cat/health?h=status"
 check_es(){
     status=$($check_cmd)
     case "$status" in
