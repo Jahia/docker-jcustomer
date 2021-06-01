@@ -23,7 +23,7 @@ The jCustomer archive can come from two locations:
 ### Examples
 #### basic run
 ```bash
-docker run -d --env-file /path/to/my-env-file jahia/jcustomer:1.4.1
+docker run -d --env-file /path/to/my-env-file jahia/jcustomer:1.5.6
 ```
 
 #### Basic env file example
@@ -54,7 +54,7 @@ MAXMIND_KEY=XXXXXXXXXXXXXXXXX
 ```
 ##### Create unomi nodes
 ``` bash
-docker run -d --name=unomi1 --hostname=unomi1 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.4.1
-docker run -d --name=unomi2 --hostname=unomi2 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.4.1
-docker run -d --name=unomi3 --hostname=unomi3 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.4.1
+docker run -d --name=unomi1 --hostname=unomi1 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.5.6
+docker run -d --name=unomi2 --hostname=unomi2 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.5.6
+docker run -d --name=unomi3 --hostname=unomi3 --net=unomi-net --env-file ./env_file jahia/jcustomer:1.5.6
 ```

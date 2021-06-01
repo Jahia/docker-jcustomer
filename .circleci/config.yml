@@ -218,16 +218,16 @@ jc_env: &jc_env
 
 
 jobs:
-  build_154:
+  build_156:
     executor: docker/docker
     steps:
       - build_jcustomer:
-          jver: "1.5.4"
-          base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.4.tar.gz"
+          jver: "1.5.6"
+          base_url: "https://downloads.jahia.com/downloads/jahia/jcustomer/jcustomer-1.5.6.tar.gz"
           <<: *tag_suffix
-  test_154:
+  test_156:
     docker:
-      - image: jahia/jcustomer_test:1.5.4
+      - image: jahia/jcustomer_test:1.5.6
         auth:
           username: $DOCKER_LOGIN
           password: $DOCKER_PASSWORD
@@ -235,7 +235,7 @@ jobs:
       - <<: *es_container
     steps:
       - test_jcustomer:
-          jver: "1.5.4"
+          jver: "1.5.6"
           <<: *tag_suffix
 
   scan_jcustomer_image:
@@ -254,11 +254,11 @@ jobs:
           registry_pass: "$DOCKER_PASSWORD"
           slack_channel: "<< parameters.slack_channel >>"
 
-  publish_154:
+  publish_156:
     executor: docker/docker
     steps:
       - publish_image:
-          jver: "1.5.4"
+          jver: "1.5.6"
           latest: true
           <<: *tag_suffix
 
@@ -267,25 +267,25 @@ workflows:
   version: 2
   build_all_jcustomer:
     jobs:
-      - build_154:
+      - build_156:
           <<: *job_options
-      - test_154:
+      - test_156:
           <<: *job_options
           requires:
-            - build_154
+            - build_156
       - human_validation:
           type: approval
           requires:
-            - test_154
+            - test_156
           <<: *job_options
       - slack/approval-notification:
           include_project_field: true
           message: ":female-police-officer: CircleCI requests your approval: please confirm that images are ready to be pushed in public repository..."
           requires:
-            - test_154
+            - test_156
           <<: *job_options
 
-      - publish_154:
+      - publish_156:
           <<: *job_options
           requires:
             - human_validation
@@ -299,5 +299,5 @@ workflows:
     jobs:
       - scan_jcustomer_image:
           <<: *job_options
-          image: jahia/jcustomer:1.5.4
+          image: jahia/jcustomer:1.5.6
           slack_channel: team-cloud-security
