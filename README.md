@@ -28,7 +28,7 @@ docker run -d --env-file /path/to/my-env-file jahia/jcustomer:1.5.6
 
 #### Basic env file example
 ```
-unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES=X.X.X.X:9300
+unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES=X.X.X.X:9200
 unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME=unomi-es-cluster-name
 ```
 
@@ -43,10 +43,10 @@ docker run -d --name elasticsearch --net=unomi-net -e "discovery.type=single-nod
 ```
 ##### Create env file
 ``` bash
-unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES=elasticsearch:9300
+unomi_env_var_UNOMI_ELASTICSEARCH_ADDRESSES=elasticsearch:9200
 unomi_env_var_UNOMI_ELASTICSEARCH_CLUSTERNAME=docker-cluster
 unomi_env_var_UNOMI_CLUSTER_PUBLIC_ADDRESS=http://public.address
-unomi_env_var_UNOMI_CLUSTER_PRIVATE_ADDRESS=http://private.address
+unomi_env_var_UNOMI_CLUSTER_INTERNAL_ADDRESS=http://private.address
 unomi_env_var_JAVA_MAX_MEM=2G
 unomi_env_var_UNOMI_ROOT_PASSWORD=AnAwesomePassword
 unomi_env_var_UNOMI_HAZELCAST_TCPIP_MEMBERS=unomi1,unomi2,unomi3
