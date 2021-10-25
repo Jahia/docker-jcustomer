@@ -45,11 +45,6 @@ commands:
           step-name: "Push to test repo << parameters.repo >>:<< parameters.jver >>"
           image: "<< parameters.repo >>"
           tag: "<< parameters.jver >>"
-      - slack/status:
-          failure_message: |
-            ':alert: Building jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
-          success_message: |
-            ':building_construction: Building jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
 
   test_jcustomer:
     description: "Pull jCustomer images from private repo and test them"
@@ -84,11 +79,6 @@ commands:
             done
             echo "you are a failure"
             exit 1
-      - slack/status:
-          failure_message: |
-            ':alert: Testing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
-          success_message: |
-            ':heartpulse: Testing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
 
   publish_image:
     description: "Push tested image to public repo"
@@ -138,11 +128,6 @@ commands:
                 step-name: "Pushing << parameters.repo >>:latest"
                 image: "<< parameters.repo >>"
                 tag: "latest"
-      - slack/status:
-          failure_message: |
-            ':alert: Publishing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> has failed !'
-          success_message: |
-            ':whale2: Publishing jcustomer:<< parameters.jver >><< parameters.tag_suffix >> successfully.'
 
   scan_image:
     description: "Pull and scan a docker image"
